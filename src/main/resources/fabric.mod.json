@@ -1,0 +1,23 @@
+{
+	"schemaVersion": 1,
+	"id": "chunk-regen",
+	"version": "${version}",
+	"name": "Chunk Regen",
+	"description": "Server-side /regen <radius> command: deletes chunks from the region files so the world generator recreates them from the seed (e.g. restoring the Nether bedrock ceiling). Requires /regen confirm.",
+	"authors": [
+		"VWS Digital"
+	],
+	"license": "CC0-1.0",
+	"environment": "server",
+	"entrypoints": {
+		"main": [
+			"com.vwsdigital.chunkregen.ChunkRegen"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.2",
+		"minecraft": "~26.1",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
