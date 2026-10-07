@@ -7,6 +7,7 @@ permissions:
   contents: write
 jobs:
   import:
+    if: github.event.head_commit.message == 'Publish bundled history'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,8 +16,7 @@ jobs:
           TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          test -f bundle.part0
-          cat bundle.part0 bundle.part1 bundle.part2 | base64 -d > /tmp/repo.bundle
+          cat bundle.p?? | base64 -d > /tmp/repo.bundle
           git bundle list-heads /tmp/repo.bundle
           rm -rf /tmp/src.git
           git clone --bare /tmp/repo.bundle /tmp/src.git
