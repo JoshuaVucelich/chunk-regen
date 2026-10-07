@@ -1,0 +1,31 @@
+name: Import history
+on:
+  push:
+    branches:
+      - bootstrap
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push full git history
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -f bundle.part0
+          cat bundle.part0 bundle.part1 bundle.part2 | base64 -d > /tmp/repo.bundle
+          git bundle list-heads /tmp/repo.bundle
+          rm -rf /tmp/src.git
+          git clone --bare /tmp/repo.bundle /tmp/src.git
+          git --git-dir=/tmp/src.git push --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            refs/heads/mc/26.1:refs/heads/mc/26.1 \
+            refs/heads/mc/26.1.1:refs/heads/mc/26.1.1 \
+            refs/heads/mc/26.1.2:refs/heads/mc/26.1.2 \
+            refs/heads/mc/26.2:refs/heads/mc/26.2 \
+            refs/heads/mc/26.3:refs/heads/mc/26.3 \
+            refs/heads/main:refs/heads/main
+          git ls-remote "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" refs/heads/main 'refs/heads/mc/*'
+          git push "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" :refs/heads/bootstrap
