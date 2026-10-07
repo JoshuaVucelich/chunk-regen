@@ -1,54 +1,41 @@
-# Chunk Regen (Fabric, server-side) — Minecraft 26.3
+# Chunk Regen
 
-`/regen` deletes chunks from the world's region files so the normal world generator recreates them from the seed —
-floor to ceiling. Typical use: repairing a griefed Nether ceiling (bedrock comes back at Y 123–127 with netherrack below).
+Server-side Fabric mod. `/regen` wipes chunks out of the region files so the normal world generator builds them again from the seed, floor to ceiling. Typical use is fixing a griefed Nether ceiling, since bedrock comes back with the rest of the chunk.
 
-- Mod id: `chunk-regen` · Version 1.0.0 · Minecraft 26.3 · Fabric Loader ≥ 0.19.5 · Fabric API · Java 25+
-- Server-only (`"environment": "server"`). License: CC0-1.0. Author: VWS Digital.
+License: CC0-1.0. Author: VWS Digital.
 
-## Commands (op-only, permission level 2)
+This branch targets Minecraft 26.3. Older releases are on `mc/26.1`, `mc/26.1.1`, `mc/26.1.2`, and `mc/26.2`.
+
+- Mod id: `chunk-regen`
+- Version: 1.0.0
+- Fabric Loader 0.19.5 or newer, Fabric API, Java 25+
+- Server only (`"environment": "server"`)
+
+## Commands
+
+Ops only (permission level 2). Nothing is deleted until you confirm.
 
 | Command | What it does |
 |---|---|
-| `/regen` | Request regen of the chunk you're standing in (radius 0) |
-| `/regen <radius>` | Request regen of a square of (2r+1)² chunks around you in your current dimension (radius in **chunks**, 0–16) |
-| `/regen confirm` | Actually run your last request (must be within 60 s) |
-| `/regen cancel` | Drop your pending request |
-| `/regen status` | Running jobs / chunks still waiting to be deleted |
+| `/regen` | Ask to wipe the chunk you are standing in |
+| `/regen <radius>` | Ask to wipe a square around you. Radius is in chunks, 0 to 16, so 2 means a 5 by 5 |
+| `/regen confirm` | Run the last request. You have 60 seconds |
+| `/regen cancel` | Drop the pending request |
+| `/regen status` | Show running jobs and chunks still waiting |
 
-Nothing happens until `/regen confirm`. The request remembers the dimension and chunk you were in when you typed it.
+The request remembers the dimension and chunk you were in when you typed it.
 
-From the server console / RCON: `execute in minecraft:the_nether positioned <x> <y> <z> run regen 2`, then `regen confirm`.
+From the server console:
 
-## What happens on confirm
+```
+execute in minecraft:the_nether positioned <x> <y> <z> run regen 2
+regen confirm
+```
 
-1. Force-loaded chunks (`/forceload`) are skipped with a warning.
-2. The target chunks are written to `<world>/chunk-regen-pending.txt` (survives a crash/restart).
-3. Every player in that dimension within *radius + max(view, simulation distance) + ~12* chunks of the area is teleported
-   to world spawn (or, if spawn is too close in the same dimension, far enough away along +X). That distance is needed
-   because a player's chunk tickets keep partially-loaded chunks in memory ~11 chunks beyond their view distance.
-   If teleport fails they are kicked with a message. Players should stay away until it says **Done** (usually seconds).
-4. When the game unloads each chunk (after saving it), the mod writes an **empty entry** for it through Minecraft's own chunk
-   IO worker — the same path vanilla uses to clear a chunk from an `.mca` region file. The IO worker keeps only the newest
-   write per chunk, so the old chunk can't be written back.
-5. The next time the chunk loads there is no data, so it is generated fresh from the world seed. Just go back to the area.
+## What confirm does
 
-If some chunks are still kept loaded after 60 s (a player came back, a portal/ender-pearl ticket, a `/forceload`ed chunk
-within ~12 chunks — you get a warning about those up front, etc.) you get a message. They stay in the pending file and are deleted as soon as they unload, or automatically at the **next server start**
-(before any world is loaded, by clearing the chunk's entry in the region file header).
+Players near the area are moved out of the way so the chunks can unload. The mod then clears those chunks from the region file. The next time a chunk loads, there is no saved data, so Minecraft generates it fresh from the seed.
 
-## Caveats — read before using
+Force-loaded chunks are skipped. If something keeps a chunk loaded (a player walks back, a portal ticket, a forceload nearby), it stays queued and is wiped once it unloads, or on the next server start.
 
-- **Border seams:** a regenerated chunk is generated from the seed but its neighbours are not, so terrain, caves and
-  features can have hard edges where they meet old chunks. **Regen the damaged chunks plus one border chunk around them**
-  (i.e. use a radius 1 larger than the damage) so the seam lands somewhere harmless.
-- Everything in the chunk is lost: player builds, chests, farms. There is no undo — **back up the world first.**
-- Entities (mobs, item frames, armor stands, dropped items) are stored separately in the `entities/` folder and are NOT
-  deleted; old ones may reappear in the fresh chunk. POI data (beds, workstations, portals) is not cleared either; vanilla
-  re-validates POIs against the real blocks.
-- Biomes/structures come from the *current* generator/seed. If the world was created on a much older version, regenerated
-  chunks will look like modern terrain.
-- Players are not teleported back afterwards.
-- Running it from the console with nobody online: vanilla pauses an empty server after `pause-when-empty-seconds`
-  (default 60), and nothing unloads while paused — the job resumes when someone joins, or finishes at the next restart.
-- This was built and compile-tested; the live delete-and-regenerate path should be tried on a **copy of the world** first.
+Builds in the wiped chunks are gone. Back up the world first. Entities and POI data are stored separately and are not deleted. A fresh chunk next to old ones can have a hard seam, so include a border chunk if that matters.
