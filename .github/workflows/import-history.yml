@@ -1,4 +1,4 @@
-name: Cleanup bootstrap
+name: Retarget bootstrap
 on:
   push:
     branches:
@@ -6,21 +6,15 @@ on:
 permissions:
   contents: write
 jobs:
-  cleanup:
-    if: github.event.head_commit.message == 'Switch default branch to main'
+  retarget:
+    if: github.event.head_commit.message == 'Retarget bootstrap to main'
     runs-on: ubuntu-latest
     steps:
-      - name: Point the repo at main and delete bootstrap
+      - name: Move bootstrap onto the real main commit
         env:
           TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          code=$(curl -sS -o /tmp/resp.json -w "%{http_code}" -X PATCH \
-            -H "Authorization: Bearer ${TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}" \
-            -d '{"default_branch":"main"}')
-          summary=$(python3 -c 'import json; d=json.load(open("/tmp/resp.json")); print((d.get("message") or d.get("default_branch") or "ok"))')
-          echo "::error::HTTP ${code} ${summary}"
-          test "$code" = "200"
-          git push "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" :refs/heads/bootstrap
+          git push --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            f3d2506679b0cab6acff18d06b67b667d67e7049:refs/heads/bootstrap
+          git ls-remote "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" refs/heads/bootstrap refs/heads/main
