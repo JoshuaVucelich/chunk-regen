@@ -2,7 +2,7 @@ name: Import history
 on:
   push:
     branches:
-      - bootstrap
+      - main
 permissions:
   contents: write
 jobs:
@@ -16,7 +16,7 @@ jobs:
           TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          cat bundle.p?? | base64 -d > /tmp/repo.bundle
+          cat $(ls bundle.c?? | sort) | base64 -d > /tmp/repo.bundle
           git bundle list-heads /tmp/repo.bundle
           rm -rf /tmp/src.git
           git clone --bare /tmp/repo.bundle /tmp/src.git
