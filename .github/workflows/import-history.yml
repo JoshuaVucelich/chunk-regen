@@ -7,7 +7,7 @@ permissions:
   contents: write
 jobs:
   cleanup:
-    if: github.event.head_commit.message == 'Remove bootstrap branch'
+    if: github.event.head_commit.message == 'Switch default branch to main'
     runs-on: ubuntu-latest
     steps:
       - name: Point the repo at main and delete bootstrap
@@ -15,12 +15,12 @@ jobs:
           TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          resp=$(curl -sS -X PATCH \
+          code=$(curl -sS -o /tmp/resp.json -w "%{http_code}" -X PATCH \
             -H "Authorization: Bearer ${TOKEN}" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}" \
             -d '{"default_branch":"main"}')
-          echo "$resp"
-          echo "::notice title=default-branch::$resp"
-          python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("default_branch")=="main", d' <<<"$resp"
+          summary=$(python3 -c 'import json; d=json.load(open("/tmp/resp.json")); print((d.get("message") or d.get("default_branch") or "ok"))')
+          echo "::error::HTTP ${code} ${summary}"
+          test "$code" = "200"
           git push "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" :refs/heads/bootstrap
