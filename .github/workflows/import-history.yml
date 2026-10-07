@@ -1,31 +1,26 @@
-name: Import history
+name: Cleanup bootstrap
 on:
   push:
     branches:
-      - main
+      - bootstrap
 permissions:
   contents: write
 jobs:
-  import:
-    if: github.event.head_commit.message == 'Publish bundled history'
+  cleanup:
+    if: github.event.head_commit.message == 'Remove bootstrap branch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Push full git history
+      - name: Point the repo at main and delete bootstrap
         env:
           TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          cat $(ls bundle.c?? | sort) | base64 -d > /tmp/repo.bundle
-          git bundle list-heads /tmp/repo.bundle
-          rm -rf /tmp/src.git
-          git clone --bare /tmp/repo.bundle /tmp/src.git
-          git --git-dir=/tmp/src.git push --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            refs/heads/mc/26.1:refs/heads/mc/26.1 \
-            refs/heads/mc/26.1.1:refs/heads/mc/26.1.1 \
-            refs/heads/mc/26.1.2:refs/heads/mc/26.1.2 \
-            refs/heads/mc/26.2:refs/heads/mc/26.2 \
-            refs/heads/mc/26.3:refs/heads/mc/26.3 \
-            refs/heads/main:refs/heads/main
-          git ls-remote "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" refs/heads/main 'refs/heads/mc/*'
+          resp=$(curl -sS -X PATCH \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}" \
+            -d '{"default_branch":"main"}')
+          echo "$resp"
+          echo "::notice title=default-branch::$resp"
+          python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("default_branch")=="main", d' <<<"$resp"
           git push "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" :refs/heads/bootstrap
