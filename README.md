@@ -1,9 +1,9 @@
-# Chunk Regen (Fabric, server-side) — Minecraft 26.3
+# Chunk Regen (Fabric, server-side) — Minecraft 26.2
 
 `/regen` deletes chunks from the world's region files so the normal world generator recreates them from the seed —
 floor to ceiling. Typical use: repairing a griefed Nether ceiling (bedrock comes back at Y 123–127 with netherrack below).
 
-- Mod id: `chunk-regen` · Version 1.0.0 · Minecraft 26.3 · Fabric Loader ≥ 0.19.5 · Fabric API · Java 25+
+- Mod id: `chunk-regen` · Version 1.1.0+26.2-fabric · Minecraft 26.2 · Fabric Loader ≥ 0.19.5 · Fabric API 0.161.0+26.2 · Java 25+
 - Server-only (`"environment": "server"`). License: CC0-1.0. Author: VWS Digital.
 
 ## Commands (op-only, permission level 2)
@@ -51,4 +51,4 @@ within ~12 chunks — you get a warning about those up front, etc.) you get a me
 - Players are not teleported back afterwards.
 - Running it from the console with nobody online: vanilla pauses an empty server after `pause-when-empty-seconds`
   (default 60), and nothing unloads while paused — the job resumes when someone joins, or finishes at the next restart.
-- This was built and compile-tested; the live delete-and-regenerate path should be tried on a **copy of the world** first.
+- This was built and compile-tested; the live delete-and-regenerate path should be tried on a **copy of the world** first. `./gradlew test` checks the Anvil header clear used at startup, including negative chunk coordinates and external `.mcc` files.
