@@ -47,8 +47,8 @@ public final class RegenCommand {
 		ChunkPos center = new ChunkPos(BlockPos.containing(ctx.getSource().getPosition()).getX() >> 4, BlockPos.containing(ctx.getSource().getPosition()).getZ() >> 4);
 		REQUESTS.put(key(ctx.getSource()), new Request(level.dimension(), center, radius, System.currentTimeMillis()));
 		int side = radius * 2 + 1;
-		int minX = (center.x() - radius) * 16, minZ = (center.z() - radius) * 16;
-		int maxX = (center.x() + radius) * 16 + 15, maxZ = (center.z() + radius) * 16 + 15;
+		int minX = (center.x - radius) * 16, minZ = (center.z - radius) * 16;
+		int maxX = (center.x + radius) * 16 + 15, maxZ = (center.z + radius) * 16 + 15;
 		ctx.getSource().sendSuccess(() -> Component.literal("[Chunk Regen] This will DELETE and regenerate from the seed " + side + "x" + side + " = " + (side * side)
 			+ " chunk(s) in " + level.dimension().identifier() + ", blocks " + minX + "," + minZ + " to " + maxX + "," + maxZ
 			+ ", floor to ceiling. Everything built there is lost. Players nearby will be moved. Type /regen confirm within 60s, or /regen cancel."), false);

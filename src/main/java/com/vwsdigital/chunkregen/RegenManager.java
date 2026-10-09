@@ -92,13 +92,12 @@ public final class RegenManager {
 		List<String> keep = new ArrayList<>();
 		try {
 			for (String line : Files.readAllLines(file)) {
-				String[] p = line.trim().split("\\s+");
-				if (p.length != 3) continue;
 				try {
-					ResourceKey<Level> dim = ResourceKey.create(Registries.DIMENSION, Identifier.parse(p[0]));
-					int x = Integer.parseInt(p[1]), z = Integer.parseInt(p[2]);
+					PendingChunkRecord rec = PendingChunkRecord.parse(line);
+					if (rec == null) continue;
+					ResourceKey<Level> dim = ResourceKey.create(Registries.DIMENSION, Identifier.parse(rec.dimensionId));
 					Path regionDir = DimensionType.getStorageFolder(dim, root).resolve("region");
-					if (OfflineRegionEditor.deleteChunk(regionDir, x, z)) done++; else missing++;
+					if (OfflineRegionEditor.deleteChunk(regionDir, rec.x, rec.z)) done++; else missing++;
 				} catch (Exception e) {
 					failed++;
 					keep.add(line);
@@ -129,9 +128,9 @@ public final class RegenManager {
 		int forced = 0;
 		for (int dx = -radius; dx <= radius; dx++) {
 			for (int dz = -radius; dz <= radius; dz++) {
-				ChunkPos cp = new ChunkPos(center.x() + dx, center.z() + dz);
-				if (level.getForceLoadedChunks().contains(cp.pack())) { forced++; continue; }
-				targets.add(new Key(dim, cp.x(), cp.z()));
+				ChunkPos cp = new ChunkPos(center.x + dx, center.z + dz);
+				if (level.getForceLoadedChunks().contains(cp.toLong())) { forced++; continue; }
+				targets.add(new Key(dim, cp.x, cp.z));
 			}
 		}
 		if (forced > 0) {
@@ -142,7 +141,7 @@ public final class RegenManager {
 		List<ChunkPos> blocking = blockingForcedChunks(level, center, radius);
 		if (!blocking.isEmpty()) {
 			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < Math.min(5, blocking.size()); i++) sb.append(i == 0 ? "" : ", ").append(blocking.get(i).x()).append(",").append(blocking.get(i).z());
+			for (int i = 0; i < Math.min(5, blocking.size()); i++) sb.append(i == 0 ? "" : ", ").append(blocking.get(i).x).append(",").append(blocking.get(i).z);
 			source.sendFailure(Component.literal("[Chunk Regen] Warning: " + blocking.size() + " force-loaded chunk(s) nearby (chunk " + sb
 				+ (blocking.size() > 5 ? ", ..." : "") + ") will keep some target chunks in memory, so they can't be deleted until that forceload is removed or the server restarts."));
 		}
@@ -154,9 +153,9 @@ public final class RegenManager {
 		Job job = new Job(source, dim, targets, tick);
 		JOBS.add(job);
 		source.sendSuccess(() -> Component.literal("[Chunk Regen] Regenerating " + targets.size() + " chunk(s) in " + dim.identifier()
-			+ " around chunk " + center.x() + "," + center.z() + ". Moved " + moved + " player(s) within " + (radius + clearance(server))
+			+ " around chunk " + center.x + "," + center.z + ". Moved " + moved + " player(s) within " + (radius + clearance(server))
 			+ " chunks away. Stay away until it says Done (usually a few seconds)."), true);
-		ChunkRegen.LOGGER.info("[chunk-regen] Job started: {} chunk(s) in {} radius {} around {},{}", targets.size(), dim.identifier(), radius, center.x(), center.z());
+		ChunkRegen.LOGGER.info("[chunk-regen] Job started: {} chunk(s) in {} radius {} around {},{}", targets.size(), dim.identifier(), radius, center.x, center.z);
 	}
 
 	/**
@@ -170,7 +169,7 @@ public final class RegenManager {
 	}
 
 	private static boolean within(ChunkPos a, ChunkPos center, int dist) {
-		return Math.abs(a.x() - center.x()) <= dist && Math.abs(a.z() - center.z()) <= dist;
+		return Math.abs(a.x - center.x) <= dist && Math.abs(a.z - center.z) <= dist;
 	}
 
 	/** Force-loaded chunks close enough to keep the target chunks in memory. */
@@ -178,7 +177,7 @@ public final class RegenManager {
 		List<ChunkPos> out = new ArrayList<>();
 		int reach = radius + ChunkLevel.RADIUS_AROUND_FULL_CHUNK + 2;
 		for (long packed : level.getForceLoadedChunks()) {
-			ChunkPos cp = ChunkPos.unpack(packed);
+			ChunkPos cp = new ChunkPos(packed);
 			if (within(cp, center, radius)) continue; // the target itself; reported separately
 			if (within(cp, center, reach)) out.add(cp);
 		}
@@ -235,7 +234,7 @@ public final class RegenManager {
 	public static void onChunkUnload(ServerLevel level, LevelChunk chunk) {
 		if (PENDING.isEmpty() && RECENTLY_DELETED.isEmpty()) return;
 		ChunkPos cp = chunk.getPos();
-		Key k = new Key(level.dimension(), cp.x(), cp.z());
+		Key k = new Key(level.dimension(), cp.x, cp.z);
 		// Fabric fires this just BEFORE vanilla queues the chunk's final save, so the actual delete happens at end of tick.
 		if (PENDING.containsKey(k) || RECENTLY_DELETED.containsKey(k)) TO_DELETE.add(k);
 	}
@@ -249,7 +248,7 @@ public final class RegenManager {
 			for (Map.Entry<Key, Boolean> e : PENDING.entrySet()) {
 				if (e.getValue()) continue;
 				ServerLevel level = server.getLevel(e.getKey().dim());
-				if (level != null && level.getChunkSource().chunkMap.getUpdatingChunkIfPresent(e.getKey().pos().pack()) == null) TO_DELETE.add(e.getKey());
+				if (level != null && level.getChunkSource().chunkMap.getUpdatingChunkIfPresent(e.getKey().pos().toLong()) == null) TO_DELETE.add(e.getKey());
 			}
 		}
 
@@ -261,7 +260,7 @@ public final class RegenManager {
 				ServerLevel level = server.getLevel(k.dim());
 				if (level == null) continue;
 				ChunkMap chunkMap = level.getChunkSource().chunkMap;
-				if (chunkMap.getUpdatingChunkIfPresent(k.pos().pack()) != null) continue; // reloaded again; wait for next unload
+				if (chunkMap.getUpdatingChunkIfPresent(k.pos().toLong()) != null) continue; // reloaded again; wait for next unload
 				if (PENDING.containsKey(k)) PENDING.put(k, Boolean.TRUE);
 				chunkMap.write(k.pos(), IOWorker.STORE_EMPTY).whenComplete((v, err) -> server.execute(() -> {
 					if (err != null) {

@@ -4,12 +4,15 @@ Server-side Fabric mod. `/regen` wipes chunks out of the region files so the nor
 
 License: CC0-1.0. Author: VWS Digital.
 
-This branch targets Minecraft 26.3. Older releases are on `mc/26.1`, `mc/26.1.1`, `mc/26.1.2`, and `mc/26.2`.
+This branch targets Minecraft 1.21.11, the last 1.21 patch with a current Fabric API build. The 26.x Fabric releases are on `mc/26.1`, `mc/26.1.1`, `mc/26.1.2`, `mc/26.2`, and `mc/26.3`.
 
 - Mod id: `chunk-regen`
-- Version: 1.0.0
-- Fabric Loader 0.19.5 or newer, Fabric API, Java 25+
+- Version: 1.1.0+1.21.11-fabric
+- Fabric Loader 0.19.5 or newer, Fabric API 0.141.6+1.21.11, Java 21+
+- Loom 1.18.3 (`net.fabricmc.fabric-loom-remap`) with Mojang mappings. 1.21.11 is still obfuscated; 26.1 and newer are not.
 - Server only (`"environment": "server"`)
+
+Chunk deletion uses the same Anvil header clear and `ChunkMap#write` / `IOWorker.STORE_EMPTY` path as the 26.x builds. 1.21.11 already has `Identifier`, the permission set used by `/regen`, and `LevelData.RespawnData`. `ChunkPos` is still a class here (`x`/`z` fields, `toLong()`), not the 26.x record (`x()`/`z()`, `pack()`/`unpack()`). The mod does not call the generator itself: once the chunk is gone from the region file, vanilla generates it from the seed. `./gradlew test` checks that header clear, including negative chunk coordinates.
 
 ## Commands
 
