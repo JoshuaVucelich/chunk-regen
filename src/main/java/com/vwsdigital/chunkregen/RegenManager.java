@@ -92,13 +92,12 @@ public final class RegenManager {
 		List<String> keep = new ArrayList<>();
 		try {
 			for (String line : Files.readAllLines(file)) {
-				String[] p = line.trim().split("\\s+");
-				if (p.length != 3) continue;
 				try {
-					ResourceKey<Level> dim = ResourceKey.create(Registries.DIMENSION, Identifier.parse(p[0]));
-					int x = Integer.parseInt(p[1]), z = Integer.parseInt(p[2]);
+					PendingChunkRecord rec = PendingChunkRecord.parse(line);
+					if (rec == null) continue;
+					ResourceKey<Level> dim = ResourceKey.create(Registries.DIMENSION, Identifier.parse(rec.dimensionId));
 					Path regionDir = DimensionType.getStorageFolder(dim, root).resolve("region");
-					if (OfflineRegionEditor.deleteChunk(regionDir, x, z)) done++; else missing++;
+					if (OfflineRegionEditor.deleteChunk(regionDir, rec.x, rec.z)) done++; else missing++;
 				} catch (Exception e) {
 					failed++;
 					keep.add(line);
