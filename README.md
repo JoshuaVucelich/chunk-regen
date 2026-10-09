@@ -12,7 +12,7 @@ This branch targets Minecraft 1.21.11, the last 1.21 patch with a current Fabric
 - Loom 1.18.3 (`net.fabricmc.fabric-loom-remap`) with Mojang mappings. 1.21.11 is still obfuscated; 26.1 and newer are not.
 - Server only (`"environment": "server"`)
 
-Chunk deletion uses the same Anvil header clear and `ChunkMap#write` / `IOWorker.STORE_EMPTY` path as the 26.x builds. 1.21.11 already has `Identifier`, the permission set used by `/regen`, and `LevelData.RespawnData`. `ChunkPos` is still a class here (`x`/`z` fields, `toLong()`), not the 26.x record (`x()`/`z()`, `pack()`/`unpack()`). The mod does not call the generator itself: once the chunk is gone from the region file, vanilla generates it from the seed. `./gradlew test` checks that header clear, including negative chunk coordinates.
+Chunk deletion uses the same Anvil header clear and `ChunkMap#write` / `IOWorker.STORE_EMPTY` path as the 26.x builds. 1.21.11 already has `Identifier`, the permission set used by `/regen`, and `LevelData.RespawnData`. `ChunkPos` is still a class here (`x`/`z` fields, `toLong()`), not the 26.x record (`x()`/`z()`, `pack()`/`unpack()`). Dimension storage also differs: 1.21.11 keeps the overworld in `world/region` and the nether and end in `DIM-1` and `DIM1`, while 26.x puts every dimension under `world/dimensions/<namespace>/<path>`. Both builds call `DimensionType.getStorageFolder`, so startup regen follows whichever layout that version uses. The mod does not call the generator itself: once the chunk is gone from the region file, vanilla generates it from the seed. `./gradlew test` checks that header clear, including negative chunk coordinates.
 
 ## Commands
 
