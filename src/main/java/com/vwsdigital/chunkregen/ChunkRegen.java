@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 @Mod(value = ChunkRegen.MOD_ID, dist = Dist.DEDICATED_SERVER)
 public class ChunkRegen {
-	public static final String MOD_ID = "chunk-regen";
+	public static final String MOD_ID = "chunk_regen";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	public ChunkRegen() {

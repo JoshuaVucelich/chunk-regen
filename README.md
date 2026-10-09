@@ -6,7 +6,7 @@ License: CC0-1.0. Author: VWS Digital.
 
 This branch is the NeoForge port for Minecraft 26.2. NeoForge 26.3 is still beta (`26.3.0.x-beta`), so the port targets the newest stable line that matches a Fabric build: NeoForge `26.2.0.89` on Minecraft 26.2. Fabric releases are on `mc/26.1`, `mc/26.1.1`, `mc/26.1.2`, `mc/26.2`, `mc/26.3`, and `mc/1.21.11`.
 
-- Mod id: `chunk-regen`
+- Mod id: `chunk_regen` (NeoForge rejects `chunk-regen` because mod ids cannot contain `-`. The command is still `/regen`.)
 - Version: 1.1.0+26.2-neoforge
 - NeoForge 26.2.0.89 or newer on the 26.2 line, Minecraft `[26.2,26.3)`, Java 25
 - ModDevGradle 2.0.148
